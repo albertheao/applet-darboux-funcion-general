@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sumas de Darboux para una función definida por el usuario</title>
+<script>MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']]},svg:{fontCache:'global'}};</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
 <style>
   :root{
     --navy:#12324a; --blue:#0b6380; --gold:#d6a52a; --ice:#edf4f6;
@@ -44,8 +46,8 @@
   .formula{margin-top:4px;color:var(--muted);font-size:12px}
   .plot-card{padding:10px 12px}
   .plot{position:relative;width:100%;min-height:330px}
-  svg{display:block;width:100%;height:auto}
-  svg text{fill:var(--ink);font-size:11px}
+  #plot > svg{display:block;width:100%;height:auto}
+  #plot > svg text{fill:var(--ink);font-size:11px}
   .grid{stroke:var(--line);stroke-width:1}.axis{stroke:var(--navy);stroke-width:1.1}.frame{fill:none;stroke:var(--line)}
   .curve{fill:none;stroke:var(--navy);stroke-width:2.5}.area{fill:var(--gold);opacity:.10}
   .rect{fill:var(--blue);fill-opacity:.23;stroke:var(--blue);stroke-width:.8}.sample{fill:var(--blue);stroke:#fff;stroke-width:1.4}
@@ -65,19 +67,19 @@
   <header>
     <p class="institution">Universidad Galileo · Departamento de Matemática Aplicada</p>
     <h1>Sumas de Darboux para una función definida por el usuario</h1>
-    <p class="intro">Escribe una función de <strong>x</strong> y un intervalo cerrado. El applet compara sumas inferiores, superiores y de punto medio con un valor de referencia obtenido mediante integración numérica.</p>
+    <p class="intro">Escribe una función de \(x\) y un intervalo cerrado \([a,b]\). El applet compara sumas inferiores, superiores y de punto medio con un valor de referencia obtenido mediante integración numérica.</p>
   </header>
 
   <section class="card" aria-labelledby="input-title">
     <h2 id="input-title" class="card-title">Función e intervalo</h2>
     <div class="controls">
-      <label>Función f(x)
+      <label>Función \(f(x)\)
         <input id="functionInput" type="text" value="x^2" spellcheck="false" autocomplete="off" aria-describedby="syntaxHelp functionError">
       </label>
-      <label>Extremo izquierdo a
+      <label>Extremo izquierdo \(a\)
         <input id="aInput" type="text" value="0" spellcheck="false" autocomplete="off">
       </label>
-      <label>Extremo derecho b
+      <label>Extremo derecho \(b\)
         <input id="bInput" type="text" value="1" spellcheck="false" autocomplete="off">
       </label>
     </div>
@@ -87,9 +89,9 @@
 
   <section class="top" aria-label="Controles de aproximación">
     <div class="card">
-      <div class="range-head"><span>Número de subintervalos (N)</span><strong id="nValue">8</strong></div>
-      <input id="nInput" type="range" min="1" max="80" step="1" value="8" aria-label="Número de subintervalos">
-      <div class="formula">Partición uniforme de [a, b]</div>
+      <div class="range-head"><span>Número de rectángulos (n)</span><strong id="nValue">8</strong></div>
+      <input id="nInput" type="range" min="1" max="80" step="1" value="8" aria-label="Número de rectángulos">
+      <div class="formula">Partición uniforme de \([a,b]\)</div>
     </div>
     <div class="card">
       <div class="card-title">Rectángulos a visualizar</div>
@@ -125,7 +127,7 @@
   'use strict';
   const $ = id => document.getElementById(id);
   const functionInput=$('functionInput'), aInput=$('aInput'), bInput=$('bInput'), nInput=$('nInput');
-  const errorBox=$('functionError'), svg=document.querySelector('svg'), plot=$('plot');
+  const errorBox=$('functionError'), svg=document.querySelector('#plot > svg'), plot=$('plot');
   let method='upper', timer=0, state=null;
 
   const supported={
