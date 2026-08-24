@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sumas de Darboux para una función definida por el usuario</title>
+<style>
+  :root{
+    --navy:#12324a; --blue:#0b6380; --gold:#d6a52a; --ice:#edf4f6;
+    --ink:#12324a; --muted:#526b79; --line:#d7e2e7; --white:#fff;
+    --red:#b42318; --red-bg:#fff1f0; --green:#267347; --orange:#d97917;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%}
+  body{
+    padding:30px 18px 60px;
+    background:linear-gradient(180deg,var(--navy) 0 8px,var(--ice) 8px 100%);
+    color:var(--ink);
+    font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  }
+  .app{max-width:1080px;margin:0 auto}
+  header{margin-bottom:20px}
+  .institution{margin:0 0 8px;color:var(--blue);font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+  h1{margin:0 0 8px;padding-left:16px;border-left:5px solid var(--gold);font-size:clamp(22px,4vw,32px);line-height:1.2;letter-spacing:-.02em}
+  .intro{max-width:760px;margin:0;color:var(--muted);font-size:14px;line-height:1.55}
+  .card{min-width:0;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--white);box-shadow:0 8px 24px rgba(18,50,74,.07)}
+  .controls{display:grid;grid-template-columns:minmax(240px,2fr) repeat(2,minmax(105px,.6fr));gap:12px;margin-bottom:12px}
+  label{display:block;color:var(--muted);font-size:12px;font-weight:700}
+  input{width:100%;margin-top:6px;padding:10px 11px;border:1px solid #b9cbd3;border-radius:9px;background:#fff;color:var(--ink);font:inherit}
+  input:focus-visible,button:focus-visible{outline:3px solid rgba(214,165,42,.42);outline-offset:2px}
+  .syntax{margin:10px 0 0;color:var(--muted);font-size:12px;line-height:1.55}
+  code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  code{padding:1px 5px;border-radius:5px;background:var(--ice);color:var(--navy)}
+  .error{display:none;margin-top:12px;padding:10px 12px;border:1px solid #f1b5af;border-radius:9px;background:var(--red-bg);color:var(--red);font-size:13px;line-height:1.45}
+  .error.show{display:block}
+  .top{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:12px;margin:12px 0}
+  .card-title{margin:0 0 8px;font-size:13px;font-weight:750}
+  .range-head{display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:13px}
+  input[type=range]{padding:0;border:0;accent-color:var(--blue)}
+  .methods{display:flex;flex-wrap:wrap;gap:7px}
+  button{padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);font:inherit;font-size:12px;cursor:pointer}
+  button[aria-pressed=true]{border-color:var(--blue);background:var(--blue);color:#fff;font-weight:700}
+  .reference{font-size:18px;font-weight:750;font-variant-numeric:tabular-nums}
+  .formula{margin-top:4px;color:var(--muted);font-size:12px}
+  .plot-card{padding:10px 12px}
+  .plot{position:relative;width:100%;min-height:330px}
+  svg{display:block;width:100%;height:auto}
+  svg text{fill:var(--ink);font-size:11px}
+  .grid{stroke:var(--line);stroke-width:1}.axis{stroke:var(--navy);stroke-width:1.1}.frame{fill:none;stroke:var(--line)}
+  .curve{fill:none;stroke:var(--navy);stroke-width:2.5}.area{fill:var(--gold);opacity:.10}
+  .rect{fill:var(--blue);fill-opacity:.23;stroke:var(--blue);stroke-width:.8}.sample{fill:var(--blue);stroke:#fff;stroke-width:1.4}
+  .summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}
+  .stat{padding:13px;border:1px solid var(--line);border-radius:14px;background:#fff}
+  .label{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.045em}
+  .value{margin-top:3px;font-size:17px;font-variant-numeric:tabular-nums}
+  .metrics{margin-top:5px;color:var(--muted);font-size:12px;line-height:1.55;font-variant-numeric:tabular-nums}
+  .note{margin-top:10px;color:var(--muted);font-size:12px;line-height:1.5}
+  footer{margin-top:22px;padding-top:16px;border-top:1px solid #cbd9df;color:var(--muted);font-size:12px;line-height:1.7;text-align:center}
+  footer strong{color:var(--navy)} footer a{color:var(--blue);text-decoration:underline;text-underline-offset:3px}
+  @media(max-width:760px){.controls,.top{grid-template-columns:1fr}.summary{grid-template-columns:1fr}.plot{min-height:280px}}
+</style>
+</head>
+<body>
+<main class="app">
+  <header>
+    <p class="institution">Universidad Galileo · Departamento de Matemática Aplicada</p>
+    <h1>Sumas de Darboux para una función definida por el usuario</h1>
+    <p class="intro">Escribe una función de <strong>x</strong> y un intervalo cerrado. El applet compara sumas inferiores, superiores y de punto medio con un valor de referencia obtenido mediante integración numérica.</p>
+  </header>
+
+  <section class="card" aria-labelledby="input-title">
+    <h2 id="input-title" class="card-title">Función e intervalo</h2>
+    <div class="controls">
+      <label>Función f(x)
+        <input id="functionInput" type="text" value="x^2" spellcheck="false" autocomplete="off" aria-describedby="syntaxHelp functionError">
+      </label>
+      <label>Extremo izquierdo a
+        <input id="aInput" type="text" value="0" spellcheck="false" autocomplete="off">
+      </label>
+      <label>Extremo derecho b
+        <input id="bInput" type="text" value="1" spellcheck="false" autocomplete="off">
+      </label>
+    </div>
+    <p id="syntaxHelp" class="syntax">Escribe los nombres en inglés: <code>sin(x)</code>, <code>cos(x)</code>, <code>tan(x)</code>, <code>log(x)</code>, <code>exp(x)</code>, <code>sqrt(x)</code> y <code>abs(x)</code>. Usa <code>pi</code>, <code>e</code>, <code>^</code> para potencias y multiplicación explícita como <code>2*x</code>. Los extremos aceptan expresiones como <code>pi/2</code>. Ejemplo: <code>exp(-x^2) + sin(2*x)</code>.</p>
+    <div id="functionError" class="error" role="alert" aria-live="assertive"></div>
+  </section>
+
+  <section class="top" aria-label="Controles de aproximación">
+    <div class="card">
+      <div class="range-head"><span>Número de subintervalos (N)</span><strong id="nValue">8</strong></div>
+      <input id="nInput" type="range" min="1" max="80" step="1" value="8" aria-label="Número de subintervalos">
+      <div class="formula">Partición uniforme de [a, b]</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Rectángulos a visualizar</div>
+      <div class="methods" role="group" aria-label="Método de aproximación">
+        <button type="button" data-method="upper" aria-pressed="true">Suma superior</button>
+        <button type="button" data-method="lower" aria-pressed="false">Suma inferior</button>
+        <button type="button" data-method="mid" aria-pressed="false">Punto medio</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Valor de referencia</div>
+      <div id="referenceValue" class="reference mono">—</div>
+      <div class="formula">Integral numérica de alta precisión</div>
+    </div>
+  </section>
+
+  <section class="card plot-card">
+    <div id="plot" class="plot"><svg role="img" aria-label="Gráfica de la función y rectángulos de aproximación"></svg></div>
+  </section>
+
+  <section class="summary" aria-label="Resultados">
+    <div class="stat"><div class="label">Suma superior</div><div class="value mono" id="upperValue">—</div><div class="metrics" id="upperMetrics"></div></div>
+    <div class="stat"><div class="label">Suma inferior</div><div class="value mono" id="lowerValue">—</div><div class="metrics" id="lowerMetrics"></div></div>
+    <div class="stat"><div class="label">Punto medio</div><div class="value mono" id="midValue">—</div><div class="metrics" id="midMetrics"></div></div>
+  </section>
+  <p id="methodNote" class="note" aria-live="polite"></p>
+
+  <footer><strong>Departamento de Matemática Aplicada</strong> · Universidad Galileo<br>Applet educativo desarrollado con apoyo de IA · <a href="mailto:alberth@galileo.edu">alberth@galileo.edu</a></footer>
+</main>
+
+<script>
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const functionInput=$('functionInput'), aInput=$('aInput'), bInput=$('bInput'), nInput=$('nInput');
+  const errorBox=$('functionError'), svg=document.querySelector('svg'), plot=$('plot');
+  let method='upper', timer=0, state=null;
+
+  const supported={
+    sin:Math.sin,cos:Math.cos,tan:Math.tan,asin:Math.asin,acos:Math.acos,atan:Math.atan,
+    sinh:Math.sinh,cosh:Math.cosh,tanh:Math.tanh,log:Math.log,ln:Math.log,log10:Math.log10,
+    exp:Math.exp,sqrt:Math.sqrt,abs:Math.abs,floor:Math.floor,ceil:Math.ceil,round:Math.round,
+    min:Math.min,max:Math.max
+  };
+  const spanishNames=/\b(sen|seno|tg|raiz|raíz|logaritmo)\b/i;
+
+  function compileExpression(source){
+    const raw=source.trim();
+    if(!raw) throw new Error('Escribe una función de x.');
+    if(spanishNames.test(raw)) throw new Error('Usa nombres de funciones en inglés; por ejemplo, escribe sin(x) en lugar de sen(x).');
+    if(!/^[0-9a-zA-Z_+\-*/^().,\s]+$/.test(raw)) throw new Error('La función contiene un símbolo no permitido.');
+    const tokens=[];
+    const tokenPattern=/\s*(?:(\d*\.?\d+(?:[eE][+-]?\d+)?)|([A-Za-z_][A-Za-z0-9_]*)|([+\-*/^(),]))/gy;
+    let position=0,match;
+    while(position<raw.length){
+      tokenPattern.lastIndex=position; match=tokenPattern.exec(raw);
+      if(!match) throw new Error(`No se pudo interpretar la expresión cerca de "${raw.slice(position,position+8)}".`);
+      tokens.push(match[1]?{type:'number',value:Number(match[1])}:match[2]?{type:'name',value:match[2].toLowerCase()}:{type:match[3],value:match[3]});
+      position=tokenPattern.lastIndex;
+    }
+    let index=0;
+    const peek=type=>tokens[index]?.type===type;
+    const take=type=>peek(type)?tokens[index++]:null;
+    function expression(){
+      let left=term();
+      while(peek('+')||peek('-')){const op=tokens[index++].type,right=term(),prior=left;left=x=>op==='+'?prior(x)+right(x):prior(x)-right(x)}
+      return left;
+    }
+    function term(){
+      let left=unary();
+      while(peek('*')||peek('/')){const op=tokens[index++].type,right=unary(),prior=left;left=x=>op==='*'?prior(x)*right(x):prior(x)/right(x)}
+      return left;
+    }
+    function unary(){
+      if(take('+'))return unary();
+      if(take('-')){const value=unary();return x=>-value(x)}
+      return power();
+    }
+    function power(){
+      const base=primary();
+      if(take('^')){const exponent=unary();return x=>Math.pow(base(x),exponent(x))}
+      return base;
+    }
+    function primary(){
+      const number=take('number'); if(number)return()=>number.value;
+      if(take('(')){const inside=expression();if(!take(')'))throw new Error('Falta un paréntesis de cierre.');return inside}
+      const name=take('name');
+      if(!name)throw new Error('La expresión está incompleta o contiene un operador fuera de lugar.');
+      if(name.value==='x')return x=>x;
+      if(name.value==='pi')return()=>Math.PI;
+      if(name.value==='e')return()=>Math.E;
+      const operation=supported[name.value];
+      if(!operation)throw new Error(`No reconozco "${name.value}". Usa x y nombres de funciones en inglés, como sin, log o exp.`);
+      if(!take('('))throw new Error(`Escribe ${name.value} con paréntesis; por ejemplo, ${name.value}(x).`);
+      const args=[];
+      if(!peek(')')){args.push(expression());while(take(','))args.push(expression())}
+      if(!take(')'))throw new Error(`Falta cerrar los paréntesis de ${name.value}.`);
+      if(!args.length)throw new Error(`${name.value} necesita al menos un argumento.`);
+      return x=>operation(...args.map(arg=>arg(x)));
+    }
+    let parsed;
+    try{parsed=expression();if(index!==tokens.length)throw new Error('Revisa los operadores y la multiplicación explícita.');}
+    catch(err){throw err instanceof Error?err:new Error('La expresión no está bien formada.');}
+    return x=>{
+      let y;
+      try{y=Number(parsed(x));}catch{throw new Error('No se pudo evaluar la función.');}
+      if(!Number.isFinite(y)) throw new Error('La función no está definida o no es finita en todo el intervalo.');
+      if(Math.abs(y)>1e12) throw new Error('La función alcanza valores demasiado grandes o se aproxima a una discontinuidad en el intervalo.');
+      return y;
+    };
+  }
+
+  function adaptiveSimpson(f,a,b,tol=1e-9,maxDepth=18){
+    const sim=(a,b,fa,fm,fb)=>(b-a)*(fa+4*fm+fb)/6;
+    const fa=f(a), fb=f(b), m=(a+b)/2, fm=f(m), whole=sim(a,b,fa,fm,fb);
+    function rec(a,b,fa,fm,fb,whole,tol,depth){
+      const m=(a+b)/2,l=(a+m)/2,r=(m+b)/2,fl=f(l),fr=f(r);
+      const left=sim(a,m,fa,fl,fm),right=sim(m,b,fm,fr,fb),delta=left+right-whole;
+      if(depth<=0||Math.abs(delta)<=15*tol) return left+right+delta/15;
+      return rec(a,m,fa,fl,fm,left,tol/2,depth-1)+rec(m,b,fm,fr,fb,right,tol/2,depth-1);
+    }
+    return rec(a,b,fa,fm,fb,whole,tol,maxDepth);
+  }
+
+  function calculate(f,a,b,n){
+    const dx=(b-a)/n; let lower=0,upper=0,mid=0; const cells=[];
+    for(let i=0;i<n;i++){
+      const left=a+i*dx,right=left+dx,center=(left+right)/2;
+      let lo=Infinity,hi=-Infinity,loX=left,hiX=left;
+      for(let j=0;j<=80;j++){
+        const x=left+(right-left)*j/80,y=f(x);
+        if(y<lo){lo=y;loX=x} if(y>hi){hi=y;hiX=x}
+      }
+      const my=f(center); lower+=lo*dx; upper+=hi*dx; mid+=my*dx;
+      cells.push({left,right,lower:lo,upper:hi,mid:my,lowerX:loX,upperX:hiX,midX:center});
+    }
+    return{lower,upper,mid,cells,dx};
+  }
+
+  function parseEndpoint(source,label){
+    if(/\bx\b/i.test(source))throw new Error(`El extremo ${label} debe ser constante y no puede depender de x.`);
+    const value=compileExpression(source)(0);
+    if(!Number.isFinite(value))throw new Error(`El extremo ${label} no es un número válido.`);
+    return value;
+  }
+
+  function fmt(v){
+    if(!Number.isFinite(v)) return '—';
+    if(v!==0&&(Math.abs(v)>=1e7||Math.abs(v)<1e-6)) return v.toExponential(6);
+    return v.toFixed(8).replace(/\.?0+$/,'');
+  }
+  function metrics(value,reference){
+    const abs=Math.abs(value-reference);
+    if(reference===0) return `Error absoluto: ${fmt(abs)}<br>Error relativo: no definido (referencia = 0)`;
+    const rel=abs/Math.abs(reference);
+    return `Error absoluto: ${fmt(abs)}<br>Error relativo: ${fmt(rel)}<br>Error porcentual: ${fmt(100*rel)}%`;
+  }
+  const ns='http://www.w3.org/2000/svg';
+  function node(name,attrs={},text=''){
+    const el=document.createElementNS(ns,name); Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,v)); if(text)el.textContent=text; return el;
+  }
+
+  function draw(){
+    if(!state)return;
+    const {f,a,b,result}=state,width=Math.max(320,Math.round(plot.getBoundingClientRect().width));
+    const height=width<520?280:350,m={l:62,r:20,t:22,b:48},iw=width-m.l-m.r,ih=height-m.t-m.b;
+    const samples=[]; let yMin=0,yMax=0;
+    for(let i=0;i<=500;i++){const xv=a+(b-a)*i/500,yv=f(xv);samples.push([xv,yv]);yMin=Math.min(yMin,yv);yMax=Math.max(yMax,yv)}
+    let span=yMax-yMin;if(span<1e-9)span=Math.max(1,Math.abs(yMax)*.2);yMin-=span*.10;yMax+=span*.10;
+    const X=v=>m.l+(v-a)/(b-a)*iw,Y=v=>m.t+(yMax-v)/(yMax-yMin)*ih;
+    svg.setAttribute('viewBox',`0 0 ${width} ${height}`);svg.replaceChildren();
+    for(let i=0;i<=4;i++){
+      const xv=a+(b-a)*i/4,yv=yMin+(yMax-yMin)*i/4;
+      svg.append(node('line',{x1:X(xv),y1:m.t,x2:X(xv),y2:m.t+ih,class:'grid'}));
+      svg.append(node('line',{x1:m.l,y1:Y(yv),x2:m.l+iw,y2:Y(yv),class:'grid'}));
+      svg.append(node('text',{x:X(xv),y:m.t+ih+20,'text-anchor':'middle'},fmt(xv)));
+      svg.append(node('text',{x:m.l-8,y:Y(yv)+4,'text-anchor':'end'},fmt(yv)));
+    }
+    const zeroY=Y(0); if(zeroY>=m.t&&zeroY<=m.t+ih)svg.append(node('line',{x1:m.l,y1:zeroY,x2:m.l+iw,y2:zeroY,class:'axis'}));
+    svg.append(node('rect',{x:m.l,y:m.t,width:iw,height:ih,class:'frame'}));
+    svg.append(node('text',{x:m.l+iw,y:m.t+ih+38,'text-anchor':'end'},'x'));
+    const key=method,baseY=Y(0);
+    for(const c of result.cells){
+      const value=c[key],sampleX=c[key+'X'];
+      svg.append(node('rect',{x:X(c.left),y:Math.min(baseY,Y(value)),width:Math.max(0,X(c.right)-X(c.left)),height:Math.abs(baseY-Y(value)),class:'rect'}));
+      svg.append(node('circle',{cx:X(sampleX),cy:Y(value),r:2.7,class:'sample'}));
+    }
+    let d=''; for(let i=0;i<samples.length;i++)d+=(i?'L':'M')+X(samples[i][0]).toFixed(2)+','+Y(samples[i][1]).toFixed(2);
+    svg.append(node('path',{d,class:'curve'}));
+  }
+
+  function render(){
+    errorBox.classList.remove('show'); errorBox.textContent='';
+    try{
+      const f=compileExpression(functionInput.value),a=parseEndpoint(aInput.value,'a'),b=parseEndpoint(bInput.value,'b'),n=Number(nInput.value);
+      if(!(a<b))throw new Error('El extremo izquierdo a debe ser menor que el extremo derecho b.');
+      if(Math.abs(b-a)>1e6)throw new Error('El intervalo es demasiado amplio. Usa una longitud menor o igual que 1,000,000.');
+      for(let i=0;i<=500;i++)f(a+(b-a)*i/500);
+      const reference=adaptiveSimpson(f,a,b),result=calculate(f,a,b,n);state={f,a,b,n,reference,result};
+      $('nValue').textContent=n;$('referenceValue').textContent=fmt(reference);
+      for(const key of ['upper','lower','mid']){$(key+'Value').textContent=fmt(result[key]);$(key+'Metrics').innerHTML=metrics(result[key],reference)}
+      const active=result[method],delta=active-reference,methodName={upper:'La suma superior',lower:'La suma inferior',mid:'La regla del punto medio'}[method];
+      $('methodNote').textContent=`${methodName} ${Math.abs(delta)<1e-12?'coincide con':delta>0?'sobreestima':'subestima'} el valor de referencia${Math.abs(delta)<1e-12?'.':` por ${fmt(Math.abs(delta))}.`} Los extremos de las sumas superior e inferior se estiman numéricamente en cada subintervalo.`;
+      draw();
+    }catch(err){
+      state=null;svg.replaceChildren();errorBox.textContent=err.message||'No se pudo interpretar la función.';errorBox.classList.add('show');
+      $('referenceValue').textContent='—'; for(const key of ['upper','lower','mid']){$(key+'Value').textContent='—';$(key+'Metrics').textContent=''} $('methodNote').textContent='';
+    }
+  }
+  function schedule(){clearTimeout(timer);timer=setTimeout(render,120)}
+  [functionInput,aInput,bInput].forEach(el=>el.addEventListener('input',schedule));
+  nInput.addEventListener('input',render);
+  document.querySelectorAll('[data-method]').forEach(btn=>btn.addEventListener('click',()=>{
+    method=btn.dataset.method;document.querySelectorAll('[data-method]').forEach(b=>b.setAttribute('aria-pressed',String(b===btn)));if(state){draw();render()}
+  }));
+  new ResizeObserver(()=>{if(state)draw()}).observe(plot);
+  render();
+})();
+</script>
+</body>
+</html>
