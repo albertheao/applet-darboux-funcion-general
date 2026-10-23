@@ -269,6 +269,11 @@
     if(v!==0&&(Math.abs(v)>=1e7||Math.abs(v)<1e-6)) return v.toExponential(6);
     return v.toFixed(8).replace(/\.?0+$/,'');
   }
+  function fmtPercent(v){
+    if(!Number.isFinite(v))return '—';
+    if(Math.abs(v)<1e-12)return '0';
+    return Math.abs(v)<.01?v.toExponential(6):v.toFixed(6).replace(/\.?0+$/,'');
+  }
   function gcd(a,b){while(b){const remainder=a%b;a=b;b=remainder}return Math.abs(a)}
   function piLabel(value){
     if(Math.abs(value)<1e-10)return '0';
@@ -295,7 +300,7 @@
     const abs=Math.abs(value-reference);
     if(Math.abs(reference)<1e-12) return `Error absoluto: ${fmt(abs)}<br>Error relativo: no definido (referencia = 0)`;
     const rel=abs/Math.abs(reference);
-    return `Error absoluto: ${fmt(abs)}<br>Error relativo: ${fmt(rel)}<br>Error porcentual: ${fmt(100*rel)}%`;
+    return `Error absoluto: ${fmt(abs)}<br>Error relativo: ${fmt(rel)}<br>Error relativo porcentual: ${fmtPercent(100*rel)}%`;
   }
   const ns='http://www.w3.org/2000/svg';
   function node(name,attrs={},text=''){
